@@ -1,0 +1,65 @@
+🔧 Key Concepts in Spring Security Config
+
+| Concept               | Description                                                           |
+| --------------------- | --------------------------------------------------------------------- |
+| `SecurityFilterChain` | Core bean that defines security filter rules                          |
+| `HttpSecurity`        | Fluent API to configure web-based security for specific http requests |
+| `UserDetailsService`  | Provides user details (from memory, DB, etc.)                         |
+| `PasswordEncoder`     | Encodes passwords (e.g. BCryptPasswordEncoder)                        |
+| `@EnableWebSecurity`  | Enables Spring Security filters                                       |
+| `permitAll()`         | Allows access to a specific endpoint without authentication           |
+| `authenticated()`     | Requires the user to be authenticated                                 |
+
+
+
+✅ Full Example with All Concepts
+🔐 1. @EnableWebSecurity + Configuration Class
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    // 🔒 2. Define the SecurityFilterChain
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/public").permitAll()         // 6. permitAll()
+                .requestMatchers("/private").authenticated()    // 7. authenticated()
+            )
+            .formLogin(withDefaults()); // built-in login form
+
+        return http.build();  // 1. SecurityFilterChain bean
+    }
+
+    // 🧑‍💻 3. In-memory user store
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails user = User.builder()
+            .username("john")
+            .password(passwordEncoder().encode("password"))
+            .roles("USER")
+            .build();
+
+        return new InMemoryUserDetailsManager(user);  // 3. UserDetailsService
+    }
+
+    // 🔐 4. Password encoder
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();  // 4. PasswordEncoder
+    }
+}
+@RestController
+public class MyController {
+
+    @GetMapping("/public")
+    public String publicEndpoint() {
+        return "This is a public endpoint - no login required!";
+    }
+
+    @GetMapping("/private")
+    public String privateEndpoint() {
+        return "This is a private endpoint - login required!";
+    }
+}
